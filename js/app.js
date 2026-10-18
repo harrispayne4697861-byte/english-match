@@ -68,6 +68,8 @@ window.EM.App = (function () {
       settings: $('view-settings')
     };
     el.mapGrid = $('map-grid');
+    el.mapSky = $('map-sky');
+    el.mapScroll = document.querySelector('#view-map .view__scroll');
     el.tabbar = $('tabbar');
     el.step1 = $('step-1');
     el.step2 = $('step-2');
@@ -111,6 +113,7 @@ window.EM.App = (function () {
       }
     });
     scrollToTop(viewName);
+    if (viewName === 'map') window.requestAnimationFrame(scrollMapToCurrent);
   }
 
   // 切换到引导页的某一步
@@ -241,26 +244,38 @@ window.EM.App = (function () {
     return !!(prev && prev.stars > 0);
   }
 
-  // 科技树几何：3 列蛇形排布，横向用百分比定位，纵向按固定行高定位
-  var TREE = { cols: 3, rowHeight: 96, top: 52, designWidth: 300 };
+  // 藤蔓几何：关卡从下往上、左右交替挂在一条藤蔓上（整页可滚动）
+  var VINE = { gap: 126, top: 132, bottom: 200, designWidth: 300, swing: 13.5 };
 
   // 第 index 个节点在设计坐标系里的位置
-  function treePos(index) {
-    var row = Math.floor(index / TREE.cols);
-    var col = index % TREE.cols;
-    // 奇数行反向，形成蛇形盘山路；连线只在相邻的两个节点之间，最短最清楚
-    if (row % 2 === 1) col = TREE.cols - 1 - col;
+  function vinePos(index) {
+    var side = index % 2 === 0 ? -1 : 1;
+    var pct = 50 + side * VINE.swing;
     return {
-      leftPct: ((col + 0.5) / TREE.cols) * 100,
-      x: (col + 0.5) * (TREE.designWidth / TREE.cols),
-      y: TREE.top + row * TREE.rowHeight
+      leftPct: pct,
+      x: pct * (VINE.designWidth / 100),
+      y: VINE.top + index * VINE.gap
     };
   }
 
-  // 两个节点之间的连线路径（上下各一半的曲线，像一条盘山路）
-  function treeCurve(a, b) {
-    var mid = (a.y + b.y) / 2;
-    return 'M' + a.x + ' ' + a.y + 'C' + a.x + ' ' + mid + ' ' + b.x + ' ' + mid + ' ' + b.x + ' ' + b.y;
+  // 相邻两关之间的藤蔓段：S 形曲线，比直线像藤
+  function vineCurve(a, b) {
+    var dy = b.y - a.y;
+    var bulge = (b.x > a.x ? 1 : -1) * 24;
+    return 'M' + a.x + ' ' + a.y +
+      'C' + (a.x + bulge) + ' ' + (a.y + dy * 0.34) + ' ' +
+      (b.x + bulge) + ' ' + (b.y - dy * 0.34) + ' ' + b.x + ' ' + b.y;
+  }
+
+  // 藤蔓上的小叶子
+  function vineLeaf(a, b, index) {
+    var mx = (a.x + b.x) / 2;
+    var my = (a.y + b.y) / 2;
+    var side = index % 2 === 0 ? 1 : -1;
+    var lx = mx + side * 30;
+    var rot = side * 26;
+    return '<ellipse class="vine-leaf" cx="' + lx + '" cy="' + my + '" rx="16" ry="8"' +
+      ' transform="rotate(' + rot + ' ' + lx + ' ' + my + ')"/>';
   }
 
   // 锁图标用内联 SVG，不依赖 emoji 字体
@@ -294,6 +309,7 @@ window.EM.App = (function () {
     var nodes = '';
     var passedPath = [];
     var pendingPath = [];
+    var leaves = '';
     var current = -1;
     var i;
     var pos;
@@ -305,7 +321,7 @@ window.EM.App = (function () {
       var unlocked = isLevelUnlocked(progress, i);
       if (unlocked && stars === 0 && current < 0) current = i;
 
-      pos = treePos(i);
+      pos = vinePos(i);
       var cls = 'tree-node';
       if (!unlocked) cls += ' is-locked';
       if (stars > 0) cls += ' is-passed';
@@ -318,6 +334,7 @@ window.EM.App = (function () {
       nodes += '<button class="' + cls + '" type="button" data-action="open-level" data-level="' + i + '"' +
         (unlocked ? '' : ' disabled') +
         ' style="left:' + pos.leftPct.toFixed(3) + '%;top:' + pos.y + 'px">' +
+        '<span class="tree-node__fruit"></span>' +
         '<span class="tree-node__ring"></span>' +
         '<span class="tree-node__no">' + (i + 1) + '</span>' +
         (unlocked ? '<span class="tree-node__stars">' + starHtml + '</span>' : LOCK_SVG) +
@@ -325,24 +342,65 @@ window.EM.App = (function () {
 
       // 连线 i-1 -> i 是否"已走过"，取决于【前一个节点】是否已通关（不是当前节点）
       if (i > 0) {
-        prevPos = treePos(i - 1);
-        var curve = treeCurve(prevPos, pos);
+        prevPos = vinePos(i - 1);
+        var curve = vineCurve(prevPos, pos);
         var prevRec = progress[String(i - 1)] || null;
         if (prevRec && Math.max(0, Math.min(3, prevRec.stars || 0)) > 0) passedPath.push(curve);
         else pendingPath.push(curve);
+        leaves += vineLeaf(prevPos, pos, i);
       }
     }
 
-    var rows = Math.ceil(count / TREE.cols);
-    var height = TREE.top * 2 + (rows - 1) * TREE.rowHeight;
+    var height = VINE.top + (count - 1) * VINE.gap + VINE.bottom;
+    var trunk = pendingPath.concat(passedPath).join(' ');
     el.mapGrid.className = 'map-tree';
     el.mapGrid.style.height = height + 'px';
     el.mapGrid.innerHTML =
-      '<svg class="map-tree__lines" viewBox="0 0 ' + TREE.designWidth + ' ' + height + '"' +
+      '<svg class="map-tree__lines" viewBox="0 0 ' + VINE.designWidth + ' ' + height + '"' +
       ' preserveAspectRatio="none" aria-hidden="true">' +
+      '<path class="vine-trunk" d="' + trunk + '"/>' +
+      '<path class="vine-trunk vine-trunk--hi" d="' + trunk + '"/>' +
+      leaves +
       (pendingPath.length ? '<path class="tree-line" d="' + pendingPath.join(' ') + '"/>' : '') +
       (passedPath.length ? '<path class="tree-line is-passed" d="' + passedPath.join(' ') + '"/>' : '') +
       '</svg>' + nodes;
+
+    // 背景高度＝解锁进度：第 1 关在地面，最后一关在云端之上
+    var riseTo = current < 0 ? count - 1 : current;
+    state.skyF = count > 1 ? (riseTo / (count - 1)) * 3 : 0;
+    updateSky(state.skyF);
+
+    window.requestAnimationFrame(scrollMapToCurrent);
+  }
+
+  // 背景分四层淡入：草地(0) → 林间(1) → 云层(2) → 云端之上(3)
+  function updateSky(f) {
+    if (!el.mapSky) return;
+    if (typeof f !== 'number' || f !== f) f = 0;
+    if (f < 0) f = 0;
+    if (f > 3) f = 3;
+    var layers = el.mapSky.querySelectorAll('.sky-layer');
+    for (var k = 0; k < layers.length; k++) {
+      var gap = Math.abs(f - k);
+      var o = gap >= 1 ? 0 : 1 - gap;
+      layers[k].style.opacity = String(Math.round(o * 1000) / 1000);
+    }
+  }
+
+  // 进地图时滚到"当前关"：玩到哪停在哪，藤蔓继续往上还有带锁的花苞
+  function scrollMapToCurrent() {
+    if (!el.mapScroll || !el.mapGrid) return;
+    var node = el.mapGrid.querySelector('.tree-node.is-current');
+    if (!node) {
+      var all = el.mapGrid.querySelectorAll('.tree-node');
+      node = all.length ? all[all.length - 1] : null;
+    }
+    if (!node) return;
+    var sRect = el.mapScroll.getBoundingClientRect();
+    var nRect = node.getBoundingClientRect();
+    if (!sRect.height) return;
+    var target = el.mapScroll.scrollTop + (nRect.top - sRect.top) - el.mapScroll.clientHeight * 0.66;
+    el.mapScroll.scrollTop = target > 0 ? target : 0;
   }
 
   // 打开第 index 关：切到游戏页并交给 UiGame

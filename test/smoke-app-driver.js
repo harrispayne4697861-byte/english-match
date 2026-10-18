@@ -62,6 +62,13 @@
             check('地图画出了科技树连线', document.querySelectorAll('#map-grid .tree-line').length >= 1,
               String(document.querySelectorAll('#map-grid .tree-line').length));
             check('第 1 关是当前关高亮', cells.length > 0 && cells[0].classList.contains('is-current'));
+            check('背景分了 4 层天空', document.querySelectorAll('#map-sky .sky-layer').length === 4,
+              String(document.querySelectorAll('#map-sky .sky-layer').length));
+            check('藤蔓比一屏更长（可以往上爬）',
+              parseFloat(document.getElementById('map-grid').style.height) > 900,
+              document.getElementById('map-grid').style.height);
+            check('藤蔓主干画出来了', document.querySelectorAll('#map-grid .vine-trunk').length >= 1,
+              String(document.querySelectorAll('#map-grid .vine-trunk').length));
             check('经验条渲染出来了', !!document.getElementById('map-xp-fill') &&
               document.getElementById('map-xp-num').textContent.indexOf('/') > 0);
 

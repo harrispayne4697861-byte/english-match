@@ -241,7 +241,94 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- 科技树地图 ---------- */
+/* ---------- 藤蔓关卡地图 ---------- */
+#view-map {
+  position: relative;
+}
+
+.map-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #dff3ff;
+}
+
+/* 顶部留一层奶油蒙版，保证标题与经验条在任何天空下都读得清 */
+.map-sky::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 170px;
+  background: linear-gradient(rgba(255, 253, 249, 0.94), rgba(255, 253, 249, 0));
+}
+
+.sky-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.24s linear;
+}
+
+.sky-layer[data-sky="0"] {
+  background:
+    radial-gradient(130% 58% at 50% 104%, #86c96a 0%, #b6e08c 40%, rgba(182, 224, 140, 0) 41%),
+    radial-gradient(80% 34% at 12% 100%, #6fbb54 0%, rgba(111, 187, 84, 0) 62%),
+    linear-gradient(180deg, #d9f1ff 0%, #edf9e7 56%, #f7fcdb 100%);
+}
+
+.sky-layer[data-sky="1"] {
+  background:
+    radial-gradient(130% 26% at 50% -4%, rgba(28, 88, 48, 0.55) 0%, rgba(28, 88, 48, 0) 72%),
+    radial-gradient(52% 60% at 2% 36%, rgba(34, 100, 56, 0.46) 0%, rgba(34, 100, 56, 0) 66%),
+    radial-gradient(52% 60% at 98% 26%, rgba(34, 100, 56, 0.4) 0%, rgba(34, 100, 56, 0) 66%),
+    radial-gradient(120% 46% at 50% 108%, #4f9d5f 0%, #7cc58d 44%, rgba(124, 197, 141, 0) 45%),
+    linear-gradient(180deg, #cfeedd 0%, #a4d9b0 52%, #86c795 100%);
+}
+
+.sky-layer[data-sky="2"] {
+  background:
+    radial-gradient(36% 15% at 20% 70%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0) 72%),
+    radial-gradient(44% 17% at 80% 84%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 74%),
+    radial-gradient(32% 13% at 52% 32%, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0) 74%),
+    linear-gradient(180deg, #9ed3ff 0%, #c9eaff 56%, #eaf8ff 100%);
+}
+
+.sky-layer[data-sky="3"] {
+  background:
+    radial-gradient(circle at 78% 12%, rgba(255, 247, 216, 0.95) 0%, rgba(255, 247, 216, 0) 13%),
+    radial-gradient(70% 18% at 50% 100%, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 72%),
+    linear-gradient(180deg, #211c46 0%, #3a3070 46%, #6b5ba8 100%);
+}
+
+.sky-layer[data-sky="3"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 18% 24%, #fff 50%, rgba(255, 255, 255, 0) 51%),
+    radial-gradient(2px 2px at 44% 14%, #fff 50%, rgba(255, 255, 255, 0) 51%),
+    radial-gradient(1.5px 1.5px at 66% 32%, #fff 50%, rgba(255, 255, 255, 0) 51%),
+    radial-gradient(2px 2px at 88% 46%, #fff 50%, rgba(255, 255, 255, 0) 51%),
+    radial-gradient(1.5px 1.5px at 30% 60%, #fff 50%, rgba(255, 255, 255, 0) 51%);
+  opacity: 0.85;
+}
+
+#view-map .view__scroll {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+#map-xp {
+  position: sticky;
+  top: 8px;
+  z-index: 3;
+}
+
 .map-tree {
   position: relative;
   width: 100%;
@@ -259,31 +346,51 @@ body {
   pointer-events: none;
 }
 
+.vine-trunk {
+  fill: none;
+  stroke: #4f8f3e;
+  stroke-width: 26;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.94;
+}
+
+.vine-trunk--hi {
+  stroke: #7dbf5c;
+  stroke-width: 12;
+  opacity: 1;
+}
+
+.vine-leaf {
+  fill: #79bd5d;
+}
+
 .tree-line {
   fill: none;
-  stroke: #ecd9c4;
-  stroke-width: 5;
+  stroke: rgba(255, 255, 255, 0.5);
+  stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 1 13;
+  stroke-dasharray: 1 11;
   vector-effect: non-scaling-stroke;
 }
 
 .tree-line.is-passed {
-  stroke: #f7b878;
+  stroke: #e2f6b4;
+  stroke-width: 7;
   stroke-dasharray: none;
-  stroke-width: 6;
 }
 
+/* 节点＝果实：未解锁是花苞，解锁是青果，通关是发光金果 */
 .tree-node {
   position: absolute;
-  width: 62px;
-  height: 62px;
+  width: 72px;
+  height: 72px;
   padding: 0;
-  border: 2px solid #f3e3d0;
+  border: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 32%, #ffffff, #fff3e6 78%);
-  box-shadow: 0 4px 0 #f0dfcb, 0 8px 16px rgba(176, 116, 60, 0.12);
-  color: var(--ink);
+  background: none;
+  color: #fff;
   font: inherit;
   transform: translate(-50%, -50%);
   transition: transform 0.12s ease;
@@ -293,55 +400,96 @@ body {
   transform: translate(-50%, -50%) scale(0.94);
 }
 
+.tree-node__fruit {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 26%, #b9e79a 0%, #7fc45f 48%, #559a3b 100%);
+  box-shadow: 0 5px 0 #3f7a2c, 0 10px 18px rgba(40, 80, 20, 0.26),
+    inset 0 -6px 12px rgba(35, 80, 20, 0.28);
+}
+
+.tree-node__fruit::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 54%;
+  width: 24px;
+  height: 13px;
+  border-radius: 0 100% 0 100%;
+  background: linear-gradient(180deg, #a5db77, #5da83f);
+  transform: rotate(-18deg);
+}
+
 .tree-node__no {
-  display: block;
-  font-size: 22px;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 2px 3px rgba(96, 44, 6, 0.55), 0 0 1px rgba(96, 44, 6, 0.7);
 }
 
 .tree-node__stars {
   position: absolute;
   right: 0;
-  bottom: -15px;
+  bottom: -16px;
   left: 0;
   display: flex;
   justify-content: center;
   gap: 1px;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1;
-  color: #e3d0ba;
-  text-shadow: 0 1px 0 #fff;
+  color: rgba(255, 255, 255, 0.38);
+  text-shadow: 0 1px 2px rgba(40, 70, 20, 0.35);
 }
 
 .tree-node__star.is-on {
   color: var(--gold);
+  text-shadow: 0 1px 2px rgba(120, 70, 10, 0.4);
 }
 
-.tree-node.is-passed {
-  border-color: #f7c89b;
-  background: radial-gradient(circle at 50% 30%, #ffffff, #ffeedb 80%);
+.tree-node.is-passed .tree-node__fruit {
+  background: radial-gradient(circle at 34% 26%, #ffd98f 0%, #f5a63a 46%, #d97a1a 100%);
+  box-shadow: 0 5px 0 #b3611a, 0 10px 20px rgba(190, 110, 20, 0.34),
+    0 0 0 4px rgba(255, 214, 130, 0.42), inset 0 -6px 12px rgba(150, 80, 10, 0.28);
+}
+
+.tree-node.is-locked .tree-node__fruit {
+  inset: 4px;
+  border-radius: 50% 50% 46% 46% / 58% 58% 42% 42%;
+  background: radial-gradient(circle at 36% 24%, #eef8de 0%, #cfe4b8 50%, #a9c78e 100%);
+  box-shadow: 0 4px 0 #a3bf87, inset 0 -5px 10px rgba(88, 112, 66, 0.2);
+}
+
+.tree-node.is-locked .tree-node__fruit::before {
+  background: linear-gradient(180deg, #dfeecb, #a9c48f);
 }
 
 .tree-node.is-locked {
-  border-color: #eee0d0;
-  border-style: dashed;
-  background: #f7efe6;
-  box-shadow: none;
-  color: #bda893;
+  color: #6f8460;
 }
 
-.tree-node.is-current {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 4px rgba(240, 138, 60, 0.18), 0 8px 18px rgba(240, 138, 60, 0.24);
-  color: #8a4a1c;
+.tree-node.is-locked .tree-node__no {
+  text-shadow: none;
+  opacity: 0.85;
+}
+
+.tree-node.is-current .tree-node__fruit {
+  background: radial-gradient(circle at 34% 26%, #ffd2a0 0%, #f2892f 48%, #d96b12 100%);
+  box-shadow: 0 5px 0 #a94f10, 0 12px 22px rgba(240, 138, 60, 0.42),
+    0 0 0 5px rgba(255, 255, 255, 0.6), inset 0 -6px 12px rgba(150, 70, 10, 0.3);
 }
 
 .tree-node__ring {
   position: absolute;
-  inset: -9px;
-  border: 2px solid rgba(240, 138, 60, 0.55);
+  inset: -10px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   opacity: 0;
   pointer-events: none;
@@ -354,22 +502,22 @@ body {
 @keyframes tree-pulse {
   0% {
     transform: scale(0.9);
-    opacity: 0.7;
+    opacity: 0.75;
   }
   70% {
-    transform: scale(1.18);
+    transform: scale(1.2);
     opacity: 0;
   }
   100% {
-    transform: scale(1.18);
+    transform: scale(1.2);
     opacity: 0;
   }
 }
 
 .tree-node__lock {
   position: absolute;
-  top: -6px;
-  right: -6px;
+  top: 2px;
+  right: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
