@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/game.css">
+</head>
+<body>
+<div class="app">
+  <section class="view" id="view-play">
+    <div class="play-top">
+      <button class="play-back" id="play-back" type="button">返回</button>
+      <span class="play-hud" id="play-hud"></span>
+    </div>
+    <div class="play-board" id="play-board"></div>
+    <div class="play-settle" id="play-settle" hidden></div>
+  </section>
+</div>
+<script src="../js/data-words.js"></script>
+<script src="../js/core-game.js"></script>
+<script src="../js/ui-game.js"></script>
+<script>
+window.EM.App = { onLevelSettle: function () {}, exitLevel: function () {} };
+var words = window.EM.Game.getWords('primary', 3).slice(0, 4);
+window.EM.UiGame.start({
+  stage: 'primary', grade: 3, levelIndex: 0,
+  config: window.EM.Data.STAGE_CONFIG.primary, words: words
+});
+var first = document.querySelector('#play-board .tile');
+if (first) first.click();
+</script>
+</body>
+</html>

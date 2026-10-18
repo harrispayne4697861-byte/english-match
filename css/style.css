@@ -543,3 +543,66 @@ h2 {
   text-align: center;
   color: var(--ink-soft);
 }
+
+/* ---------- 关卡地图 ---------- */
+
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+  padding: 4px 0 24px;
+}
+
+.level-grid .placeholder-card {
+  grid-column: 1 / -1;
+}
+
+.level-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 78px;
+  padding: 10px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.level-cell:active {
+  transform: scale(0.96);
+}
+
+.level-cell.is-locked {
+  background: #f1ece4;
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.level-cell__no {
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.level-cell__stars {
+  display: flex;
+  gap: 1px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--line);
+}
+
+.level-cell__star.is-on {
+  color: var(--brand);
+}
+
+.level-cell__lock {
+  font-size: 13px;
+  opacity: 0.7;
+}

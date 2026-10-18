@@ -1,0 +1,197 @@
+/* game.css · 对局页样式：顶部信息条 + 方块棋盘 + 结算面板
+   只作用于 index.html 里 #view-play 内的 play-* 元素。 */
+
+#view-play {
+  padding-top: calc(6px + var(--safe-top));
+}
+
+/* ---------- 顶部信息条 ---------- */
+
+.play-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px calc(12px + var(--safe-right)) 6px calc(12px + var(--safe-left));
+}
+
+.play-back {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.play-hud {
+  display: flex;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.play-hud__item.is-hot {
+  color: var(--brand);
+  font-weight: 700;
+}
+
+.play-hud__item.is-warn {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+/* ---------- 棋盘 ---------- */
+
+.play-board {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 4), 1fr);
+  /* 行高由方块的 aspect-ratio 撑出，整体在棋盘区垂直居中 */
+  align-content: center;
+  grid-auto-rows: auto;
+  gap: 8px;
+  padding: 6px calc(12px + var(--safe-right)) calc(12px + var(--safe-bottom)) calc(12px + var(--safe-left));
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  /* 接近正方形，避免只有两行时被拉成竖长条 */
+  aspect-ratio: 1;
+  max-height: 132px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease,
+    opacity 180ms ease;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.tile[data-face="en"] {
+  font-size: clamp(12px, 3.6vw, 16px);
+}
+
+.tile[data-face="zh"] {
+  font-size: clamp(13px, 4vw, 17px);
+}
+
+.tile[data-face="emoji"] {
+  font-size: clamp(20px, 7vw, 30px);
+}
+
+.tile.is-selected {
+  background: #ffe8d2;
+  border-color: var(--brand);
+  transform: scale(1.04);
+}
+
+.tile.is-matched {
+  animation: tile-pop 220ms ease forwards;
+}
+
+.tile.is-wrong {
+  background: #fde3df;
+  border-color: var(--danger-line);
+  animation: tile-shake 320ms ease;
+}
+
+/* 消除后占位保留，棋盘不塌陷 */
+.tile.is-cleared {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@keyframes tile-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+
+@keyframes tile-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.is-matched,
+  .tile.is-wrong {
+    animation: none;
+  }
+  .tile.is-matched {
+    opacity: 0;
+  }
+}
+
+/* ---------- 结算面板 ---------- */
+
+.play-settle {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(47, 42, 38, 0.42);
+}
+
+.play-settle__box {
+  width: 100%;
+  max-width: 320px;
+  padding: 22px 20px 18px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  text-align: center;
+}
+
+.play-settle__title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.play-settle__stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 6px;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--line);
+}
+
+.play-settle__star.is-on {
+  color: var(--brand);
+}
+
+.play-settle__meta {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.play-settle__box .btn + .btn {
+  margin-top: 10px;
+}

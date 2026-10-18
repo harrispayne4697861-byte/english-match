@@ -7,6 +7,7 @@
 <meta name="format-detection" content="telephone=no">
 <title>单词消消乐</title>
 <link rel="stylesheet" href="css/style.css?v=1">
+<link rel="stylesheet" href="css/game.css?v=1">
 </head>
 <body>
 
@@ -69,11 +70,7 @@
         <h1 class="page-head__title">闯关</h1>
         <p class="page-head__meta" id="map-meta"></p>
       </header>
-      <div class="placeholder-card">
-        <p class="placeholder-card__emoji">🚧</p>
-        <p class="placeholder-card__title">章节与关卡建设中</p>
-        <p class="placeholder-card__desc">下一个版本会出现在这里</p>
-      </div>
+      <div class="level-grid" id="map-grid"></div>
     </div>
   </section>
 
@@ -120,6 +117,16 @@
     </div>
   </section>
 
+  <!-- 游戏页：一关的对局界面，内容由 js/ui-game.js 填充 -->
+  <section class="view" id="view-play" hidden>
+    <div class="play-top">
+      <button class="play-back" id="play-back" type="button">返回</button>
+      <span class="play-hud" id="play-hud"></span>
+    </div>
+    <div class="play-board" id="play-board"></div>
+    <div class="play-settle" id="play-settle" hidden></div>
+  </section>
+
   <!-- 底部 Tab -->
   <nav class="tabbar" id="tabbar" hidden>
     <button class="tab" type="button" data-action="switch-tab" data-tab="map">
@@ -159,6 +166,9 @@
 </noscript>
 
 <script src="js/platform.js"></script>
+<script src="js/data-words.js"></script>
+<script src="js/core-game.js"></script>
+<script src="js/ui-game.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

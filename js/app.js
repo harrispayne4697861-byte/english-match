@@ -63,9 +63,11 @@ window.EM.App = (function () {
     el.views = {
       onboard: $('view-onboard'),
       map: $('view-map'),
+      play: $('view-play'),
       wrong: $('view-wrong'),
       settings: $('view-settings')
     };
+    el.mapGrid = $('map-grid');
     el.tabbar = $('tabbar');
     el.step1 = $('step-1');
     el.step2 = $('step-2');
@@ -93,7 +95,7 @@ window.EM.App = (function () {
     Object.keys(el.views).forEach(function (key) {
       setHidden(el.views[key], key !== viewName);
     });
-    setHidden(el.tabbar, viewName === 'onboard');
+    setHidden(el.tabbar, viewName === 'onboard' || viewName === 'play');
     TABS.forEach(function (tab) {
       var btn = el.tabbar && el.tabbar.querySelector('[data-tab="' + tab + '"]');
       if (!btn) return;
@@ -177,9 +179,144 @@ window.EM.App = (function () {
     el.settingsGrade.textContent = gradeLabel(profile.stage, profile.grade);
   }
 
+  // 存档里 progress 的键名：一个年龄段的一个年级一份进度
+  function progressKey(stage, grade) {
+    return stage + '_' + grade;
+  }
+
+  // 确保存档里有 progress 与 wrongBook 两个容器，老存档升级时也不会报错
+  function ensureDataShape() {
+    if (!state.data) return;
+    if (!state.data.progress || typeof state.data.progress !== 'object') state.data.progress = {};
+    if (!state.data.wrongBook || typeof state.data.wrongBook !== 'object') state.data.wrongBook = {};
+  }
+
+  // 取当前档案下这个年级的进度表，形如 { '0': { stars: 2, best: 130 } }
+  function currentProgress() {
+    var profile = state.data && state.data.profile;
+    if (!isValidProfile(profile)) return {};
+    ensureDataShape();
+    var key = progressKey(profile.stage, profile.grade);
+    if (!state.data.progress[key] || typeof state.data.progress[key] !== 'object') {
+      state.data.progress[key] = {};
+    }
+    return state.data.progress[key];
+  }
+
+  // 当前档案对应的玩法配置
+  function currentConfig() {
+    var profile = state.data && state.data.profile;
+    var all = (window.EM && window.EM.Data && window.EM.Data.STAGE_CONFIG) || null;
+    if (!isValidProfile(profile) || !all) return null;
+    return all[profile.stage] || null;
+  }
+
+  // 第 index 关是否已解锁：第一关永远开放，之后要求上一关至少 1 星
+  function isLevelUnlocked(progress, index) {
+    if (index <= 0) return true;
+    var prev = progress[String(index - 1)];
+    return !!(prev && prev.stars > 0);
+  }
+
+  // 渲染关卡地图：按玩法配置生成关卡格子，显示星级与锁
+  function renderMap() {
+    if (!el.mapGrid) return;
+    var config = currentConfig();
+    var profile = state.data && state.data.profile;
+    var hasContent = !!(profile && window.EM && window.EM.Game &&
+      window.EM.Game.hasContent(profile.stage, profile.grade));
+
+    if (!config || !hasContent || config.levelCount <= 0) {
+      el.mapGrid.innerHTML =
+        '<div class="placeholder-card">' +
+        '<p class="placeholder-card__emoji">🚧</p>' +
+        '<p class="placeholder-card__title">这个年级的关卡还在写</p>' +
+        '<p class="placeholder-card__desc">先做的是小学三年级。想先玩的话，去设置里换年级。</p>' +
+        '</div>';
+      return;
+    }
+
+    var progress = currentProgress();
+    var html = '';
+    for (var i = 0; i < config.levelCount; i++) {
+      var rec = progress[String(i)] || null;
+      var stars = rec ? rec.stars : 0;
+      var unlocked = isLevelUnlocked(progress, i);
+      var starHtml = '';
+      for (var s = 0; s < 3; s++) {
+        starHtml += '<span class="level-cell__star' + (s < stars ? ' is-on' : '') + '">★</span>';
+      }
+      html += '<button class="level-cell' + (unlocked ? '' : ' is-locked') + '" type="button"' +
+        ' data-action="open-level" data-level="' + i + '"' +
+        (unlocked ? '' : ' disabled') + '>' +
+        '<span class="level-cell__no">' + (i + 1) + '</span>' +
+        '<span class="level-cell__stars">' + (unlocked ? starHtml : '<span class="level-cell__lock">🔒</span>') + '</span>' +
+        '</button>';
+    }
+    el.mapGrid.innerHTML = html;
+  }
+
+  // 打开第 index 关：切到游戏页并交给 UiGame
+  function openLevel(index) {
+    var config = currentConfig();
+    var profile = state.data && state.data.profile;
+    if (!config || !isValidProfile(profile)) return;
+    if (!window.EM.Game || !window.EM.UiGame) return;
+
+    var all = window.EM.Game.getWords(profile.stage, profile.grade);
+    var need = config.pairsPerLevel;
+    if (all.length < need) return;
+
+    // 按关卡序号切片取词，走到词表末尾就绕回去
+    var start = (index * need) % all.length;
+    var words = [];
+    for (var i = 0; i < need; i++) words.push(all[(start + i) % all.length]);
+
+    showView('play');
+
+    window.EM.UiGame.start({
+      stage: profile.stage,
+      grade: profile.grade,
+      levelIndex: index,
+      config: config,
+      words: words
+    });
+  }
+
+  // 退出关卡回到地图
+  function exitLevel() {
+    if (window.EM.UiGame) window.EM.UiGame.stop();
+    renderMap();
+    showView('map');
+  }
+
+  // 一关结束：记进度、记错词，回地图
+  function onLevelSettle(result) {
+    if (!result) return;
+    var progress = currentProgress();
+    var key = String(result.levelIndex);
+    var old = progress[key] || { stars: 0, best: 0 };
+    if (result.stars > old.stars || result.score > old.best) {
+      progress[key] = {
+        stars: Math.max(old.stars, result.stars),
+        best: Math.max(old.best, result.score)
+      };
+    }
+    var wrongIds = result.wrongWordIds || [];
+    ensureDataShape();
+    for (var i = 0; i < wrongIds.length; i++) {
+      var id = wrongIds[i];
+      state.data.wrongBook[id] = (state.data.wrongBook[id] || 0) + 1;
+    }
+    Platform.save(state.data);
+    renderProfile();
+    renderMap();
+  }
+
   // 进入主应用
   function enterApp(tab) {
     renderProfile();
+    renderMap();
     showView(tab || 'map');
   }
 
@@ -224,6 +361,9 @@ window.EM.App = (function () {
     'finish-onboard': finishOnboarding,
     'switch-tab': function (node) {
       showView(node.getAttribute('data-tab'));
+    },
+    'open-level': function (node) {
+      openLevel(parseInt(node.getAttribute('data-level'), 10));
     },
     'open-clear': openClearModal,
     'close-modal': closeClearModal,
@@ -309,6 +449,9 @@ window.EM.App = (function () {
 
   return {
     start: start,
-    showView: showView
+    showView: showView,
+    onLevelSettle: onLevelSettle,
+    exitLevel: exitLevel,
+    renderMap: renderMap
   };
 })();

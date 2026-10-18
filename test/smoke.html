@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>smoke</title>
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/game.css">
+</head>
+<body>
+<div class="app">
+  <section class="view" id="view-play">
+    <div class="play-top">
+      <button class="play-back" id="play-back" type="button">返回</button>
+      <span class="play-hud" id="play-hud"></span>
+    </div>
+    <div class="play-board" id="play-board"></div>
+    <div class="play-settle" id="play-settle" hidden></div>
+  </section>
+</div>
+<pre id="result">RUNNING</pre>
+
+<script src="../js/data-words.js"></script>
+<script src="../js/core-game.js"></script>
+<script src="../js/ui-game.js"></script>
+<script>
+(function () {
+  var lines = [];
+  var fails = 0;
+  function check(name, ok, detail) {
+    lines.push((ok ? 'ok   ' : 'FAIL ') + name + (detail ? ' -> ' + detail : ''));
+    if (!ok) fails++;
+  }
+
+  // 用假的 App 收结果，不加载 app.js
+  var settleResult = null;
+  window.EM.App = {
+    onLevelSettle: function (r) { settleResult = r; },
+    exitLevel: function () { window.__exited = true; }
+  };
+
+  var words = window.EM.Game.getWords('primary', 3).slice(0, 4);
+  var dict = {};
+  words.forEach(function (w) { dict[w.en] = w.zh; });
+
+  window.EM.UiGame.start({
+    stage: 'primary',
+    grade: 3,
+    levelIndex: 0,
+    config: window.EM.Data.STAGE_CONFIG.primary,
+    words: words
+  });
+
+  var board = document.getElementById('play-board');
+  var hud = document.getElementById('play-hud');
+  var tiles = Array.prototype.slice.call(board.querySelectorAll('.tile'));
+
+  check('棋盘 8 块', tiles.length === 8, String(tiles.length));
+  check('HUD 显示第 1 关', hud.textContent.indexOf('第 1 关') !== -1, hud.textContent);
+  check('棋盘列数变量已设置', board.style.getPropertyValue('--cols') === '4', board.style.getPropertyValue('--cols'));
+
+  // 找出四组配对
+  var pairs = [];
+  var enTiles = tiles.filter(function (t) { return t.getAttribute('data-face') === 'en'; });
+  var zhTiles = tiles.filter(function (t) { return t.getAttribute('data-face') === 'zh'; });
+  enTiles.forEach(function (en) {
+    var zhText = dict[en.textContent.trim()];
+    var zh = null;
+    for (var i = 0; i < zhTiles.length; i++) {
+      if (zhTiles[i].textContent.trim() === zhText) { zh = zhTiles[i]; break; }
+    }
+    if (zh) pairs.push([en, zh]);
+  });
+  check('能配出 4 组', pairs.length === 4, String(pairs.length));
+
+  var idx = 0;
+  function nextPair() {
+    if (idx >= pairs.length) {
+      window.setTimeout(verify, 400);
+      return;
+    }
+    var p = pairs[idx++];
+    p[0].click();
+    p[1].click();
+    window.setTimeout(nextPair, 320);
+  }
+
+  function verify() {
+    check('每关结束回调收到结果', !!settleResult);
+    if (settleResult) {
+      check('状态为过关', settleResult.passed === true, String(settleResult.passed));
+      check('得分 100', settleResult.score === 100, String(settleResult.score));
+      check('3 星', settleResult.stars === 3, String(settleResult.stars));
+      check('0 次错误', settleResult.mistakes === 0, String(settleResult.mistakes));
+    }
+    var settle = document.getElementById('play-settle');
+    check('结算面板已显示', !settle.hasAttribute('hidden'));
+    check('结算面板有 3 颗亮星', settle.querySelectorAll('.play-settle__star.is-on').length === 3);
+    check('消除后棋盘仍是 8 个格子（不塌陷）', board.querySelectorAll('.tile').length === 8);
+    check('消除的块仍在 DOM 里', board.querySelectorAll('.tile.is-cleared').length === 8,
+      String(board.querySelectorAll('.tile.is-cleared').length));
+
+    // 点"回到地图"
+    var back = settle.querySelector('[data-settle="back"]');
+    if (back) back.click();
+    check('回到地图走 App.exitLevel', window.__exited === true);
+
+    document.getElementById('result').textContent =
+      lines.join('\n') + '\nSMOKE ' + (fails ? 'FAIL ' + fails : 'PASS');
+    document.title = fails ? 'SMOKE-FAIL' : 'SMOKE-PASS';
+  }
+
+  window.setTimeout(nextPair, 120);
+})();
+</script>
+</body>
+</html>
