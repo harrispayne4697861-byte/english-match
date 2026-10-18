@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#f6f3ee">
+<meta name="format-detection" content="telephone=no">
+<title>单词消消乐</title>
+<link rel="stylesheet" href="css/style.css?v=1">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- 引导页：3 步，同一页面内切换 -->
+  <section class="view" id="view-onboard" hidden>
+    <div class="view__scroll">
+      <p class="onboard-progress" id="onboard-progress">第 1 步 / 共 3 步</p>
+
+      <div class="onboard-step" id="step-1">
+        <h1 class="onboard-title">你在哪个年龄段？</h1>
+        <p class="onboard-sub">年龄段决定玩法，先选一个吧</p>
+        <div class="stage-list">
+          <button class="stage-card" type="button" data-action="pick-stage" data-stage="kindergarten">
+            <span class="stage-card__emoji">🧸</span>
+            <span class="stage-card__body">
+              <span class="stage-card__name">幼儿园</span>
+              <span class="stage-card__desc">看图配对，不计时</span>
+            </span>
+          </button>
+          <button class="stage-card" type="button" data-action="pick-stage" data-stage="primary">
+            <span class="stage-card__emoji">📚</span>
+            <span class="stage-card__body">
+              <span class="stage-card__name">小学</span>
+              <span class="stage-card__desc">英文配中文，限时闯关</span>
+            </span>
+          </button>
+          <button class="stage-card" type="button" data-action="pick-stage" data-stage="junior">
+            <span class="stage-card__emoji">🚀</span>
+            <span class="stage-card__body">
+              <span class="stage-card__name">初中</span>
+              <span class="stage-card__desc">中考词汇，记录错词</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="onboard-step" id="step-2" hidden>
+        <h1 class="onboard-title">你在哪个年级？</h1>
+        <p class="onboard-sub" id="grade-hint">已选择：幼儿园</p>
+        <div class="grade-list" id="grade-list"></div>
+        <button class="btn btn--ghost" type="button" data-action="back-to-stage">返回上一步</button>
+      </div>
+
+      <div class="onboard-step" id="step-3" hidden>
+        <h1 class="onboard-title">确认一下</h1>
+        <p class="onboard-sub">这些信息只保存在这台手机上</p>
+        <div class="summary" id="onboard-summary"></div>
+        <button class="btn btn--primary" type="button" data-action="finish-onboard">完成，开始闯关</button>
+        <button class="btn btn--ghost" type="button" data-action="back-to-grade">返回上一步</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关卡地图（首页） -->
+  <section class="view" id="view-map" hidden>
+    <div class="view__scroll">
+      <header class="page-head">
+        <h1 class="page-head__title">闯关</h1>
+        <p class="page-head__meta" id="map-meta"></p>
+      </header>
+      <div class="placeholder-card">
+        <p class="placeholder-card__emoji">🚧</p>
+        <p class="placeholder-card__title">章节与关卡建设中</p>
+        <p class="placeholder-card__desc">下一个版本会出现在这里</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 错词本 -->
+  <section class="view" id="view-wrong" hidden>
+    <div class="view__scroll">
+      <header class="page-head">
+        <h1 class="page-head__title">错词本</h1>
+      </header>
+      <div class="empty">
+        <p class="empty__emoji">🐣</p>
+        <p class="empty__text">还没有错词，去闯关吧</p>
+        <button class="btn btn--primary" type="button" data-action="switch-tab" data-tab="map">去闯关</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 设置 -->
+  <section class="view" id="view-settings" hidden>
+    <div class="view__scroll">
+      <header class="page-head">
+        <h1 class="page-head__title">设置</h1>
+      </header>
+
+      <div class="card">
+        <h2 class="card__title">当前档案</h2>
+        <p class="card__row">年龄段<span class="card__value" id="settings-stage">—</span></p>
+        <p class="card__row">年级<span class="card__value" id="settings-grade">—</span></p>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">本地数据</h2>
+        <p class="card__text">清空后年龄、年级、关卡进度、错词本都会从这台手机上删除，无法恢复。</p>
+        <button class="btn btn--danger" type="button" data-action="open-clear">清空全部本地数据</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card__title">隐私说明</h2>
+        <p class="card__text">你的年龄段、年级、关卡进度和错词只保存在这台手机的浏览器里，不会上传到任何服务器。</p>
+        <p class="card__text">我们不收集任何个人信息：不收集姓名、生日、头像、性别、位置、联系方式。</p>
+        <p class="card__text">将来会有匿名使用统计，只包含随机生成、无法对应到具体某个人的匿名编号，以及玩到哪一关、成绩和用时，用于改进关卡难度。</p>
+        <p class="card__text">点上面的「清空全部本地数据」并确认，就可以随时删掉本机全部数据。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 底部 Tab -->
+  <nav class="tabbar" id="tabbar" hidden>
+    <button class="tab" type="button" data-action="switch-tab" data-tab="map">
+      <span class="tab__icon">🎯</span>
+      <span class="tab__label">闯关</span>
+    </button>
+    <button class="tab" type="button" data-action="switch-tab" data-tab="wrong">
+      <span class="tab__icon">📕</span>
+      <span class="tab__label">错词本</span>
+    </button>
+    <button class="tab" type="button" data-action="switch-tab" data-tab="settings">
+      <span class="tab__icon">⚙️</span>
+      <span class="tab__label">设置</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- 清空数据的二次确认弹层 -->
+<div class="modal" id="modal-clear" hidden>
+  <div class="modal__mask" data-action="close-modal"></div>
+  <div class="modal__box" role="dialog" aria-modal="true" aria-labelledby="modal-clear-title">
+    <h2 class="modal__title" id="modal-clear-title">确定清空全部本地数据？</h2>
+    <p class="modal__text">年龄、年级、关卡进度、错词本会全部删除，且无法恢复。</p>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" type="button" data-action="close-modal">取消</button>
+      <button class="btn btn--danger" type="button" data-action="confirm-clear">确定清空</button>
+    </div>
+  </div>
+</div>
+
+<!-- 横屏提示 -->
+<div class="rotate-hint">请竖屏游玩</div>
+
+<noscript>
+  <div class="noscript">需要开启浏览器的 JavaScript 才能使用本游戏。</div>
+</noscript>
+
+<script src="js/platform.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
