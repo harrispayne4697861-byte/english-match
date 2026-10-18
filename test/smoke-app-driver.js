@@ -113,6 +113,9 @@
                           check('经验条随对局变化', xpAfter !== xpBefore, xpBefore + ' -> ' + xpAfter);
                           var first = document.querySelectorAll('#map-grid .tree-node')[0];
                           check('第 1 关变成已通关', first.classList.contains('is-passed'));
+                          check('第 1 关到第 2 关的连线变成实线',
+                            document.querySelectorAll('#map-grid .tree-line.is-passed').length >= 1,
+                            String(document.querySelectorAll('#map-grid .tree-line.is-passed').length));
                           check('第 1 关拿到星级',
                             first.querySelectorAll('.tree-node__star.is-on').length >= 1,
                             String(first.querySelectorAll('.tree-node__star.is-on').length));

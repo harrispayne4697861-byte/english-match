@@ -323,10 +323,12 @@ window.EM.App = (function () {
         (unlocked ? '<span class="tree-node__stars">' + starHtml + '</span>' : LOCK_SVG) +
         '</button>';
 
+      // 连线 i-1 -> i 是否"已走过"，取决于【前一个节点】是否已通关（不是当前节点）
       if (i > 0) {
         prevPos = treePos(i - 1);
         var curve = treeCurve(prevPos, pos);
-        if (stars > 0) passedPath.push(curve);
+        var prevRec = progress[String(i - 1)] || null;
+        if (prevRec && Math.max(0, Math.min(3, prevRec.stars || 0)) > 0) passedPath.push(curve);
         else pendingPath.push(curve);
       }
     }
