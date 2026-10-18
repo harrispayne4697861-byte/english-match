@@ -55,10 +55,20 @@
           setTimeout(function () {
             check('完成后进入地图', !document.getElementById('view-map').hasAttribute('hidden'));
             check('底部 Tab 出现', !document.getElementById('tabbar').hasAttribute('hidden'));
-            var cells = document.querySelectorAll('#map-grid .level-cell');
+            var cells = document.querySelectorAll('#map-grid .tree-node');
             check('地图渲染 12 关', cells.length === 12, String(cells.length));
             check('第 1 关可点', cells.length > 0 && !cells[0].disabled);
             check('第 2 关上锁', cells.length > 1 && cells[1].disabled === true);
+            check('地图画出了科技树连线', document.querySelectorAll('#map-grid .tree-line').length >= 1,
+              String(document.querySelectorAll('#map-grid .tree-line').length));
+            check('第 1 关是当前关高亮', cells.length > 0 && cells[0].classList.contains('is-current'));
+            check('经验条渲染出来了', !!document.getElementById('map-xp-fill') &&
+              document.getElementById('map-xp-num').textContent.indexOf('/') > 0);
+
+            tap(cells[1]);
+            setTimeout(function () {
+              check('点锁着的第 2 关进不去', document.getElementById('view-play').hasAttribute('hidden'));
+              check('点锁着的关卡不会生成棋盘', document.querySelectorAll('#play-board .tile').length === 0);
 
             tap(cells[0]);
             setTimeout(function () {
@@ -73,8 +83,50 @@
               setTimeout(function () {
                 check('返回后回到地图', !document.getElementById('view-map').hasAttribute('hidden'));
                 check('返回后棋盘已清空', document.querySelectorAll('#play-board .tile').length === 0);
-                report();
+
+                var xpBefore = document.getElementById('map-xp-num').textContent;
+
+                // 再进第 1 关，按 data-pair-id 把四对全部消除，走完一整关
+                tap(document.querySelectorAll('#map-grid .tree-node')[0]);
+                setTimeout(function () {
+                  var tiles = Array.prototype.slice.call(document.querySelectorAll('#play-board .tile'));
+                  var groups = {};
+                  tiles.forEach(function (t) {
+                    var k = t.getAttribute('data-pair-id');
+                    (groups[k] = groups[k] || []).push(t);
+                  });
+                  var seq = [];
+                  Object.keys(groups).forEach(function (k) {
+                    seq.push(groups[k][0], groups[k][1]);
+                  });
+                  check('四对词都拿到了配对编号', seq.length === 8, String(seq.length));
+
+                  var i = 0;
+                  (function step() {
+                    if (i >= seq.length) {
+                      setTimeout(function () {
+                        check('消完四对就弹结算面板', !document.getElementById('play-settle').hasAttribute('hidden'));
+                        check('结算面板显示本次经验', !!document.querySelector('.play-settle__xp'));
+                        tap(document.querySelector('[data-settle="back"]'));
+                        setTimeout(function () {
+                          var xpAfter = document.getElementById('map-xp-num').textContent;
+                          check('经验条随对局变化', xpAfter !== xpBefore, xpBefore + ' -> ' + xpAfter);
+                          var first = document.querySelectorAll('#map-grid .tree-node')[0];
+                          check('第 1 关变成已通关', first.classList.contains('is-passed'));
+                          check('第 1 关拿到星级',
+                            first.querySelectorAll('.tree-node__star.is-on').length >= 1,
+                            String(first.querySelectorAll('.tree-node__star.is-on').length));
+                          report();
+                        }, 300);
+                      }, 400);
+                      return;
+                    }
+                    tap(seq[i++]);
+                    setTimeout(step, 300);
+                  })();
+                }, 300);
               }, 200);
+            }, 300);
             }, 300);
           }, 200);
         }, 150);

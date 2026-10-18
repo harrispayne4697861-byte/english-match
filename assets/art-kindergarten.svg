@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="小熊和积木">
+  <rect width="200" height="200" rx="36" fill="#fff1de"/>
+  <circle cx="52" cy="52" r="26" fill="#ffe6c8"/>
+  <circle cx="158" cy="150" r="34" fill="#ffe9d0"/>
+  <g>
+    <circle cx="78" cy="88" r="34" fill="#c98a52"/>
+    <circle cx="56" cy="62" r="12" fill="#c98a52"/>
+    <circle cx="56" cy="62" r="6" fill="#f3cfae"/>
+    <circle cx="100" cy="62" r="12" fill="#c98a52"/>
+    <circle cx="100" cy="62" r="6" fill="#f3cfae"/>
+    <circle cx="68" cy="86" r="4" fill="#3b2b22"/>
+    <circle cx="88" cy="86" r="4" fill="#3b2b22"/>
+    <circle cx="78" cy="97" r="11" fill="#f8e0c6"/>
+    <ellipse cx="78" cy="95" rx="4" ry="3" fill="#3b2b22"/>
+    <path d="M73 103q5 5 10 0" stroke="#3b2b22" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+  </g>
+  <g>
+    <rect x="120" y="96" width="52" height="52" rx="10" fill="#f08a3c"/>
+    <rect x="120" y="96" width="52" height="14" rx="7" fill="#ffb26b"/>
+    <path d="M146 116l3.4 7.2 7.8.9-5.8 5.4 1.6 7.7-7-3.9-7 3.9 1.6-7.7-5.8-5.4 7.8-.9z" fill="#fff6ea"/>
+  </g>
+  <ellipse cx="100" cy="172" rx="62" ry="9" fill="#f6dcc0"/>
+</svg>

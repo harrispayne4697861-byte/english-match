@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="火箭">
+  <rect width="200" height="200" rx="36" fill="#eef0fb"/>
+  <circle cx="52" cy="50" r="4" fill="#c9cdf3"/>
+  <circle cx="152" cy="46" r="3" fill="#c9cdf3"/>
+  <circle cx="164" cy="112" r="4" fill="#c9cdf3"/>
+  <circle cx="40" cy="118" r="3" fill="#c9cdf3"/>
+  <g transform="rotate(-12 100 105)">
+    <path d="M100 34c20 22 30 46 30 72 0 18-13 32-30 32s-30-14-30-32c0-26 10-50 30-72z" fill="#f4f6ff" stroke="#b9bff0" stroke-width="3"/>
+    <path d="M100 44c14 20 21 40 21 60 0 6-1 11-3 16H82c-2-5-3-10-3-16 0-20 7-40 21-60z" fill="#dfe3fb"/>
+    <circle cx="100" cy="86" r="13" fill="#7ec8e3"/>
+    <circle cx="100" cy="86" r="7" fill="#bfe9f7"/>
+    <path d="M70 116c-10 6-16 16-16 28l20-8z" fill="#6f86e0"/>
+    <path d="M130 116c10 6 16 16 16 28l-20-8z" fill="#6f86e0"/>
+    <path d="M92 138h16l-8 30z" fill="#f08a3c"/>
+    <path d="M96 138h8l-4 16z" fill="#ffd27a"/>
+  </g>
+  <ellipse cx="100" cy="178" rx="52" ry="8" fill="#dcdef5"/>
+</svg>

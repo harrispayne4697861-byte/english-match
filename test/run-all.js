@@ -1,5 +1,5 @@
 /**
- * run-all.js · 一次跑完所有检查（词库 / 核心逻辑 / 两套浏览器冒烟）
+ * run-all.js · 一次跑完所有检查（词库 / 核心逻辑 / 等级经验 / 两套浏览器冒烟）
  * 用法：node test/run-all.js
  */
 var cp = require('child_process');
@@ -47,6 +47,7 @@ function smoke(entry, expect) {
 
 step('词库数据', function () { runNode('check-words.js'); });
 step('核心逻辑', function () { runNode('check-core.js'); });
+step('等级经验', function () { runNode('check-growth.js'); });
 step('对局页冒烟', function () { smoke('smoke.html', 'SMOKE PASS'); });
 step('整机接线冒烟', function () {
   runNode('build-smoke-app.js');

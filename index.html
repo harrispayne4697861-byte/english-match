@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#f6f3ee">
+<meta name="theme-color" content="#ffe9d2">
 <meta name="format-detection" content="telephone=no">
 <title>单词消消乐</title>
-<link rel="stylesheet" href="css/style.css?v=2">
-<link rel="stylesheet" href="css/game.css?v=2">
+<link rel="stylesheet" href="css/style.css?v=3">
+<link rel="stylesheet" href="css/game.css?v=3">
+<link rel="stylesheet" href="css/theme.css?v=3">
 </head>
 <body>
 
@@ -23,21 +24,21 @@
         <p class="onboard-sub">年龄段决定玩法，先选一个吧</p>
         <div class="stage-list">
           <button class="stage-card" type="button" data-action="pick-stage" data-stage="kindergarten">
-            <span class="stage-card__emoji">🧸</span>
+            <span class="stage-card__art"><img src="assets/art-kindergarten.svg" alt="" width="64" height="64"></span>
             <span class="stage-card__body">
               <span class="stage-card__name">幼儿园</span>
               <span class="stage-card__desc">看图配对，不计时</span>
             </span>
           </button>
           <button class="stage-card" type="button" data-action="pick-stage" data-stage="primary">
-            <span class="stage-card__emoji">📚</span>
+            <span class="stage-card__art"><img src="assets/art-primary.svg" alt="" width="64" height="64"></span>
             <span class="stage-card__body">
               <span class="stage-card__name">小学</span>
               <span class="stage-card__desc">英文配中文，限时闯关</span>
             </span>
           </button>
           <button class="stage-card" type="button" data-action="pick-stage" data-stage="junior">
-            <span class="stage-card__emoji">🚀</span>
+            <span class="stage-card__art"><img src="assets/art-junior.svg" alt="" width="64" height="64"></span>
             <span class="stage-card__body">
               <span class="stage-card__name">初中</span>
               <span class="stage-card__desc">中考词汇，记录错词</span>
@@ -70,6 +71,11 @@
         <h1 class="page-head__title">闯关</h1>
         <p class="page-head__meta" id="map-meta"></p>
       </header>
+      <div class="xp-bar" id="map-xp">
+        <span class="xp-bar__lv" id="map-lv">Lv.1</span>
+        <span class="xp-bar__track"><span class="xp-bar__fill" id="map-xp-fill"></span></span>
+        <span class="xp-bar__num" id="map-xp-num">0 / 100</span>
+      </div>
       <div class="level-grid" id="map-grid"></div>
     </div>
   </section>
@@ -130,15 +136,26 @@
   <!-- 底部 Tab -->
   <nav class="tabbar" id="tabbar" hidden>
     <button class="tab" type="button" data-action="switch-tab" data-tab="map">
-      <span class="tab__icon">🎯</span>
+      <span class="tab__icon"><svg class="tab__svg" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4.6" y="3" width="2.4" height="18" rx="1.2" fill="currentColor"></rect>
+        <path d="M7 4h10.4l-2.6 4 2.6 4H7z" fill="currentColor"></path>
+      </svg></span>
       <span class="tab__label">闯关</span>
     </button>
     <button class="tab" type="button" data-action="switch-tab" data-tab="wrong">
-      <span class="tab__icon">📕</span>
+      <span class="tab__icon"><svg class="tab__svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 5a2.5 2.5 0 0 1 2.5-2.5H11V20H6.5A2.5 2.5 0 0 0 4 22.5z" fill="currentColor"></path>
+        <path d="M20 5a2.5 2.5 0 0 0-2.5-2.5H13V20h4.5A2.5 2.5 0 0 1 20 22.5z" fill="currentColor"></path>
+      </svg></span>
       <span class="tab__label">错词本</span>
     </button>
     <button class="tab" type="button" data-action="switch-tab" data-tab="settings">
-      <span class="tab__icon">⚙️</span>
+      <span class="tab__icon"><svg class="tab__svg" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"></rect>
+        <circle cx="9" cy="7.2" r="2.8" fill="currentColor"></circle>
+        <rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"></rect>
+        <circle cx="15" cy="16.8" r="2.8" fill="currentColor"></circle>
+      </svg></span>
       <span class="tab__label">设置</span>
     </button>
   </nav>
@@ -165,10 +182,11 @@
   <div class="noscript">需要开启浏览器的 JavaScript 才能使用本游戏。</div>
 </noscript>
 
-<script src="js/platform.js?v=2"></script>
-<script src="js/data-words.js?v=2"></script>
-<script src="js/core-game.js?v=2"></script>
-<script src="js/ui-game.js?v=2"></script>
-<script src="js/app.js?v=2"></script>
+<script src="js/platform.js?v=3"></script>
+<script src="js/data-words.js?v=3"></script>
+<script src="js/core-game.js?v=3"></script>
+<script src="js/growth.js?v=3"></script>
+<script src="js/ui-game.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
 </body>
 </html>

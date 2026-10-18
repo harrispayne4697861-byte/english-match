@@ -83,6 +83,7 @@ window.EM.UiGame = (function () {
     for (var i = 0; i < session.tiles.length; i++) {
       var tile = session.tiles[i];
       html += '<button class="tile" type="button" data-tile-id="' + escapeHtml(tile.tileId) +
+        '" data-pair-id="' + escapeHtml(tile.pairId) +
         '" data-face="' + escapeHtml(tile.face) + '">' + escapeHtml(tile.text) + '</button>';
     }
     boardEl.innerHTML = html;
@@ -176,8 +177,8 @@ window.EM.UiGame = (function () {
     }, 200);
   }
 
-  // 结算面板
-  function showSettle(result) {
+  // 结算面板；extra 是上层回传的本次经验，没有就不显示经验行
+  function showSettle(result, extra) {
     if (!settleEl) return;
     var stars = '';
     for (var i = 0; i < 3; i++) {
@@ -187,11 +188,18 @@ window.EM.UiGame = (function () {
     var meta = result.passed ?
       ('得分 ' + result.score + ' · 错 ' + result.mistakes + ' 次') :
       ('还差一点，得分 ' + result.score);
+    var xpHtml = '';
+    if (extra && extra.xpGained > 0) {
+      xpHtml = '<p class="play-settle__xp">+' + extra.xpGained + ' XP' +
+        (extra.leveledUp ? ' · 升到 Lv.' + extra.level : '') + '</p>';
+    }
     settleEl.innerHTML =
       '<div class="play-settle__box">' +
+      '<img class="play-settle__art" src="assets/art-settle.svg" alt="" width="96" height="96">' +
       '<p class="play-settle__title">' + title + '</p>' +
       '<p class="play-settle__stars">' + stars + '</p>' +
       '<p class="play-settle__meta">' + meta + '</p>' +
+      xpHtml +
       '<button class="btn btn--primary" type="button" data-settle="again">再玩一次</button>' +
       '<button class="btn btn--ghost" type="button" data-settle="back">回到地图</button>' +
       '</div>';
@@ -222,10 +230,12 @@ window.EM.UiGame = (function () {
       wrongWordIds: summary.wrongWordIds || [],
       usedMs: typeof summary.usedMs === 'number' ? summary.usedMs : 0
     };
-    showSettle(result);
+    // 先落存档（顺带拿到本次经验），再画结算面板
+    var extra = null;
     if (window.EM.App && window.EM.App.onLevelSettle) {
-      window.EM.App.onLevelSettle(result);
+      extra = window.EM.App.onLevelSettle(result);
     }
+    showSettle(result, extra);
   }
 
   // 结算面板上的两个按钮

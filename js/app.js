@@ -77,6 +77,9 @@ window.EM.App = (function () {
     el.gradeList = $('grade-list');
     el.summary = $('onboard-summary');
     el.mapMeta = $('map-meta');
+    el.mapLv = $('map-lv');
+    el.xpFill = $('map-xp-fill');
+    el.xpNum = $('map-xp-num');
     el.settingsStage = $('settings-stage');
     el.settingsGrade = $('settings-grade');
     el.modal = $('modal-clear');
@@ -173,10 +176,26 @@ window.EM.App = (function () {
       el.settingsGrade.textContent = '—';
       return;
     }
-    el.mapMeta.textContent = stageLabel(profile.stage) + ' · ' + gradeLabel(profile.stage, profile.grade) +
-      ' · 等级 Lv.1 XP 0';
+    el.mapMeta.textContent = stageLabel(profile.stage) + ' · ' + gradeLabel(profile.stage, profile.grade);
     el.settingsStage.textContent = stageLabel(profile.stage);
     el.settingsGrade.textContent = gradeLabel(profile.stage, profile.grade);
+  }
+
+  // 当前累计经验
+  function growthXp() {
+    if (!state.data) return 0;
+    ensureDataShape();
+    return state.data.growth.xp;
+  }
+
+  // 把等级与经验条画到地图顶部；Growth 没加载时静默跳过
+  function renderGrowth() {
+    var G = window.EM && window.EM.Growth;
+    if (!G || !el.mapLv || !el.xpFill || !el.xpNum) return;
+    var info = G.levelProgress(growthXp());
+    el.mapLv.textContent = 'Lv.' + info.level;
+    el.xpFill.style.width = info.percent + '%';
+    el.xpNum.textContent = info.into + ' / ' + info.need;
   }
 
   // 存档里 progress 的键名：一个年龄段的一个年级一份进度
@@ -189,6 +208,10 @@ window.EM.App = (function () {
     if (!state.data) return;
     if (!state.data.progress || typeof state.data.progress !== 'object') state.data.progress = {};
     if (!state.data.wrongBook || typeof state.data.wrongBook !== 'object') state.data.wrongBook = {};
+    if (!state.data.growth || typeof state.data.growth !== 'object') state.data.growth = { xp: 0 };
+    if (typeof state.data.growth.xp !== 'number' || !isFinite(state.data.growth.xp) || state.data.growth.xp < 0) {
+      state.data.growth.xp = 0;
+    }
   }
 
   // 取当前档案下这个年级的进度表，形如 { '0': { stars: 2, best: 130 } }
@@ -218,7 +241,35 @@ window.EM.App = (function () {
     return !!(prev && prev.stars > 0);
   }
 
-  // 渲染关卡地图：按玩法配置生成关卡格子，显示星级与锁
+  // 科技树几何：3 列蛇形排布，横向用百分比定位，纵向按固定行高定位
+  var TREE = { cols: 3, rowHeight: 96, top: 52, designWidth: 300 };
+
+  // 第 index 个节点在设计坐标系里的位置
+  function treePos(index) {
+    var row = Math.floor(index / TREE.cols);
+    var col = index % TREE.cols;
+    // 奇数行反向，形成蛇形盘山路；连线只在相邻的两个节点之间，最短最清楚
+    if (row % 2 === 1) col = TREE.cols - 1 - col;
+    return {
+      leftPct: ((col + 0.5) / TREE.cols) * 100,
+      x: (col + 0.5) * (TREE.designWidth / TREE.cols),
+      y: TREE.top + row * TREE.rowHeight
+    };
+  }
+
+  // 两个节点之间的连线路径（上下各一半的曲线，像一条盘山路）
+  function treeCurve(a, b) {
+    var mid = (a.y + b.y) / 2;
+    return 'M' + a.x + ' ' + a.y + 'C' + a.x + ' ' + mid + ' ' + b.x + ' ' + mid + ' ' + b.x + ' ' + b.y;
+  }
+
+  // 锁图标用内联 SVG，不依赖 emoji 字体
+  var LOCK_SVG = '<span class="tree-node__lock"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+    '<rect x="5" y="10.5" width="14" height="9.5" rx="3" fill="currentColor"/>' +
+    '<path d="M8.2 10.5V8.4a3.8 3.8 0 0 1 7.6 0v2.1" fill="none" stroke="currentColor" ' +
+    'stroke-width="2.2" stroke-linecap="round"/></svg></span>';
+
+  // 渲染关卡地图：科技树（节点＝关卡，连线表示推进顺序）
   function renderMap() {
     if (!el.mapGrid) return;
     var config = currentConfig();
@@ -227,6 +278,8 @@ window.EM.App = (function () {
       window.EM.Game.hasContent(profile.stage, profile.grade));
 
     if (!config || !hasContent || config.levelCount <= 0) {
+      el.mapGrid.className = 'level-grid';
+      el.mapGrid.style.height = '';
       el.mapGrid.innerHTML =
         '<div class="placeholder-card">' +
         '<p class="placeholder-card__emoji">🚧</p>' +
@@ -237,23 +290,57 @@ window.EM.App = (function () {
     }
 
     var progress = currentProgress();
-    var html = '';
-    for (var i = 0; i < config.levelCount; i++) {
+    var count = config.levelCount;
+    var nodes = '';
+    var passedPath = [];
+    var pendingPath = [];
+    var current = -1;
+    var i;
+    var pos;
+    var prevPos;
+
+    for (i = 0; i < count; i++) {
       var rec = progress[String(i)] || null;
-      var stars = rec ? rec.stars : 0;
+      var stars = rec ? Math.max(0, Math.min(3, rec.stars || 0)) : 0;
       var unlocked = isLevelUnlocked(progress, i);
+      if (unlocked && stars === 0 && current < 0) current = i;
+
+      pos = treePos(i);
+      var cls = 'tree-node';
+      if (!unlocked) cls += ' is-locked';
+      if (stars > 0) cls += ' is-passed';
+      if (i === current) cls += ' is-current';
+
       var starHtml = '';
       for (var s = 0; s < 3; s++) {
-        starHtml += '<span class="level-cell__star' + (s < stars ? ' is-on' : '') + '">★</span>';
+        starHtml += '<span class="tree-node__star' + (s < stars ? ' is-on' : '') + '">★</span>';
       }
-      html += '<button class="level-cell' + (unlocked ? '' : ' is-locked') + '" type="button"' +
-        ' data-action="open-level" data-level="' + i + '"' +
-        (unlocked ? '' : ' disabled') + '>' +
-        '<span class="level-cell__no">' + (i + 1) + '</span>' +
-        '<span class="level-cell__stars">' + (unlocked ? starHtml : '<span class="level-cell__lock">🔒</span>') + '</span>' +
+      nodes += '<button class="' + cls + '" type="button" data-action="open-level" data-level="' + i + '"' +
+        (unlocked ? '' : ' disabled') +
+        ' style="left:' + pos.leftPct.toFixed(3) + '%;top:' + pos.y + 'px">' +
+        '<span class="tree-node__ring"></span>' +
+        '<span class="tree-node__no">' + (i + 1) + '</span>' +
+        (unlocked ? '<span class="tree-node__stars">' + starHtml + '</span>' : LOCK_SVG) +
         '</button>';
+
+      if (i > 0) {
+        prevPos = treePos(i - 1);
+        var curve = treeCurve(prevPos, pos);
+        if (stars > 0) passedPath.push(curve);
+        else pendingPath.push(curve);
+      }
     }
-    el.mapGrid.innerHTML = html;
+
+    var rows = Math.ceil(count / TREE.cols);
+    var height = TREE.top * 2 + (rows - 1) * TREE.rowHeight;
+    el.mapGrid.className = 'map-tree';
+    el.mapGrid.style.height = height + 'px';
+    el.mapGrid.innerHTML =
+      '<svg class="map-tree__lines" viewBox="0 0 ' + TREE.designWidth + ' ' + height + '"' +
+      ' preserveAspectRatio="none" aria-hidden="true">' +
+      (pendingPath.length ? '<path class="tree-line" d="' + pendingPath.join(' ') + '"/>' : '') +
+      (passedPath.length ? '<path class="tree-line is-passed" d="' + passedPath.join(' ') + '"/>' : '') +
+      '</svg>' + nodes;
   }
 
   // 打开第 index 关：切到游戏页并交给 UiGame
@@ -262,6 +349,9 @@ window.EM.App = (function () {
     var profile = state.data && state.data.profile;
     if (!config || !isValidProfile(profile)) return;
     if (!window.EM.Game || !window.EM.UiGame) return;
+    // 锁着的关卡一律进不去：disabled 属性在部分浏览器上挡不住 pointer 事件
+    if (!(index >= 0 && index < config.levelCount)) return;
+    if (!isLevelUnlocked(currentProgress(), index)) return;
 
     var all = window.EM.Game.getWords(profile.stage, profile.grade);
     var need = config.pairsPerLevel;
@@ -290,32 +380,50 @@ window.EM.App = (function () {
     showView('map');
   }
 
-  // 一关结束：记进度、记错词，回地图
+  // 一关结束：记进度、记错词、加经验，返回本次经验给结算面板用
   function onLevelSettle(result) {
-    if (!result) return;
+    if (!result || !state.data) return null;
+    var G = window.EM && window.EM.Growth;
     var progress = currentProgress();
     var key = String(result.levelIndex);
-    var old = progress[key] || { stars: 0, best: 0 };
-    if (result.stars > old.stars || result.score > old.best) {
-      progress[key] = {
-        stars: Math.max(old.stars, result.stars),
-        best: Math.max(old.best, result.score)
-      };
-    }
+    var old = progress[key] || null;
+    var firstClear = !old || !(old.stars > 0);
+    var stars = Math.max(0, Math.min(3, result.stars || 0));
+
+    progress[key] = {
+      stars: Math.max(old ? old.stars : 0, stars),
+      best: Math.max(old ? old.best : 0, result.score || 0)
+    };
+
     var wrongIds = result.wrongWordIds || [];
     ensureDataShape();
     for (var i = 0; i < wrongIds.length; i++) {
       var id = wrongIds[i];
       state.data.wrongBook[id] = (state.data.wrongBook[id] || 0) + 1;
     }
+
+    var gained = 0;
+    var levelBefore = 1;
+    var levelAfter = 1;
+    if (G) {
+      levelBefore = G.levelFromXp(growthXp());
+      gained = G.xpForResult({ passed: !!result.passed, stars: stars }, firstClear);
+      state.data.growth.xp = growthXp() + gained;
+      levelAfter = G.levelFromXp(state.data.growth.xp);
+    }
+
     Platform.save(state.data);
     renderProfile();
+    renderGrowth();
     renderMap();
+
+    return { xpGained: gained, level: levelAfter, leveledUp: levelAfter > levelBefore };
   }
 
   // 进入主应用
   function enterApp(tab) {
     renderProfile();
+    renderGrowth();
     renderMap();
     showView(tab || 'map');
   }
@@ -340,6 +448,7 @@ window.EM.App = (function () {
     state.draftGrade = null;
     closeClearModal();
     renderProfile();
+    renderGrowth();
     showStep(1);
     showView('onboard');
   }
